@@ -40,7 +40,7 @@ function Save-NativeAlias
 		Write-Verbose "[$thisFunctionName]Started: $($start.ToString('yyyy-MM-dd HH:mm:ss.fff'))"
 
 		# Function BEGIN:
-		$modulePath = Split-Path -Path $PSScriptRoot -Parent
+		$modulePath = Get-Module -ListAvailable -Name PSExpandLine | Select-Object -ExpandProperty Path
 	}
 
 	PROCESS

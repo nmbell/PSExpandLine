@@ -1,16 +1,19 @@
-# PSExpandLine 1.0.0
+# PSExpandLine 1.0.1
 [CmdletBinding()]
 Param()
 
 
 # Set variables
-$PSExpandLineNativeAliasesFilePath = "$PSScriptRoot\config\PSExpandLine_native.csv"
-$PSExpandLineCustomAliasesFilePath = "$PSScriptRoot\config\PSExpandLine_custom.csv"
+$PSExpandLineNativeAliasesFilePath = Join-Path -Path $PSScriptRoot -ChildPath 'config' -AdditionalChildPath 'PSExpandLine_native.csv'
+$PSExpandLineCustomAliasesFilePath = Join-Path -Path $PSScriptRoot -ChildPath 'config' -AdditionalChildPath 'PSExpandLine_custom.csv'
 
 
 # Include functions
-. "$PSScriptRoot\functions\Save-NativeAlias.ps1"
-. "$PSScriptRoot\functions\Edit-CustomAlias.ps1"
+$functionsDirPath = Join-Path -Path $PSScriptRoot -ChildPath 'functions'
+ForEach ($file in Get-ChildItem -Path $functionsDirPath -Filter '*.ps1')
+{
+	. "$($file.FullName)"
+}
 
 
 # Import the aliases

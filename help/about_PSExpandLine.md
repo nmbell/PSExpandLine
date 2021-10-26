@@ -1,4 +1,4 @@
-# PSExpandLine 1.0.0
+# PSExpandLine 1.0.1
 
 
 ## SHORT DESCRIPTION
@@ -29,7 +29,7 @@ This command will open a list of user-defined alias expansions with the default 
 
 ## QUICK START GUIDE
 ### 1. Install the module.
-The [module](https://www.powershellgallery.com/packages/PSExpandLine/1.0.0) is available through the [PowerShell Gallery](https://docs.microsoft.com/en-us/powershell/scripting/gallery/getting-started). Run the following command in a PowerShell console to install the module:
+The [module](https://www.powershellgallery.com/packages/PSExpandLine/1.0.1) is available through the [PowerShell Gallery](https://docs.microsoft.com/en-us/powershell/scripting/gallery/getting-started). Run the following command in a PowerShell console to install the module:
 ```
 Install-Module -Name PSExpandLine -Force
 ```
@@ -111,5 +111,8 @@ PSReadLine reference documentation can be found [here](https://docs.microsoft.co
 
 
 ## RELEASE HISTORY
+### 1.0.1 (2021-10-26)
+  - Update file path handling for cross-platform
+
 ### 1.0.0 (2021-10-21)
   - Initial release
