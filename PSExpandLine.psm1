@@ -1,11 +1,13 @@
-# PSExpandLine 1.0.1
+# PSExpandLine 1.1.0
 [CmdletBinding()]
 Param()
 
 
 # Set variables
-$PSExpandLineNativeAliasesFilePath = Join-Path -Path $PSScriptRoot -ChildPath 'config' -AdditionalChildPath 'PSExpandLine_native.csv'
-$PSExpandLineCustomAliasesFilePath = Join-Path -Path $PSScriptRoot -ChildPath 'config' -AdditionalChildPath 'PSExpandLine_custom.csv'
+$PSExpandLine = @{}
+$PSExpandLine.NativeHotstringsFilePath = Join-Path -Path $PSScriptRoot -ChildPath 'config' -AdditionalChildPath 'PSExpandLine_native.csv'
+$PSExpandLine.CustomHotstringsFilePath = Join-Path -Path $PSScriptRoot -ChildPath 'config' -AdditionalChildPath 'PSExpandLine_custom.csv'
+$PSExpandLine.ModulePath               = $PSScriptRoot
 
 
 # Include functions
@@ -16,20 +18,20 @@ ForEach ($file in Get-ChildItem -Path $functionsDirPath -Filter '*.ps1')
 }
 
 
-# Import the aliases
-$PSExpandLineAliases = [Ordered]@{}
-If (Test-Path -Path $PSExpandLineNativeAliasesFilePath)
+# Import the hotstrings
+$hotstrings = [Ordered]@{}
+If (Test-Path -Path $PSExpandLine.NativeHotstringsFilePath)
 {
-	Import-Csv -Path $PSExpandLineNativeAliasesFilePath | ForEach-Object { $PSExpandLineAliases.$($_.Name) = $_.Definition }
+	Import-Csv -Path $PSExpandLine.NativeHotstringsFilePath | ForEach-Object { $hotstrings.$($_.Name) = $_.Definition }
 }
-If (Test-Path -Path $PSExpandLineCustomAliasesFilePath)
+If (Test-Path -Path $PSExpandLine.CustomHotstringsFilePath)
 {
-	# custom aliases can overwrite native aliases
-	Import-Csv -Path $PSExpandLineCustomAliasesFilePath | ForEach-Object { $PSExpandLineAliases.$($_.Name) = $_.Definition }
+	# custom hotstrings can overwrite native hotstrings
+	Import-Csv -Path $PSExpandLine.CustomHotstringsFilePath | ForEach-Object { $hotstrings.$($_.Name) = $_.Definition }
 }
 
 
-# Set the key handler for alias expansion
+# Set the key handler for hotstring expansion
 $sb =
 {
 	# Get the contents of the buffer
@@ -60,27 +62,27 @@ $sb =
 		}
 	}
 
-	# Get the alias definition
-	$aliasDefinition = $null
+	# Get the hotstring definition
+	$hotstringDefinition = $null
 	If (!$tokenLeftOfCursor.TokenFlags -or $tokenLeftOfCursor.TokenFlags -band 524288) # 524288 = CommandName
 	{
-		$aliasDefinition = $PSExpandLineAliases[$($tokenLeftOfCursor.Text)]
+		$hotstringDefinition = $hotstrings[$($tokenLeftOfCursor.Text)]
 	}
 
-	# Replace alias with full command name
-	If ($aliasDefinition)
+	# Replace hotstring with full command name
+	If ($hotstringDefinition)
 	{
 		[Microsoft.PowerShell.PSConsoleReadLine]::BackwardDeleteWord()
 		$space = ' '
 		If ($cursor2 -lt $buffer.Length -and $buffer.Substring($cursor2,1) -eq ' ') { $space = '' } # don't add a space if there's one already there
-		If ($aliasDefinition[0] -eq '{' -and $aliasDefinition[-1] -eq '}') # script block
+		If ($hotstringDefinition[0] -eq '{' -and $hotstringDefinition[-1] -eq '}') # script block
 		{
-			$sb = [ScriptBlock]::Create($aliasDefinition.Substring(1,$aliasDefinition.Length-2).Trim())
-			$aliasDefinition = Invoke-Command -ScriptBlock $sb -ErrorAction Ignore | Out-String -NoNewline
+			$sb = [ScriptBlock]::Create($hotstringDefinition.Substring(1,$hotstringDefinition.Length-2).Trim())
+			$hotstringDefinition = Invoke-Command -ScriptBlock $sb -ErrorAction Ignore | Out-String -NoNewline
 		}
-		If ($aliasDefinition -like '*<PSXLCursor>*')
+		If ($hotstringDefinition -like '*<PSXLCursor>*')
 		{
-			$splitDefinition = $aliasDefinition -split '<PSXLCursor>'
+			$splitDefinition = $hotstringDefinition -split '<PSXLCursor>'
 			[Microsoft.PowerShell.PSConsoleReadLine]::Insert($splitDefinition[0])
 			[Microsoft.PowerShell.PSConsoleReadLine]::SetMark()
 			[Microsoft.PowerShell.PSConsoleReadLine]::Insert($splitDefinition[1])
@@ -90,7 +92,7 @@ $sb =
 		}
 		Else
 		{
-			[Microsoft.PowerShell.PSConsoleReadLine]::Insert($aliasDefinition)
+			[Microsoft.PowerShell.PSConsoleReadLine]::Insert($hotstringDefinition)
 			[Microsoft.PowerShell.PSConsoleReadLine]::Insert($space)
 		}
 	}
@@ -100,17 +102,17 @@ $sb =
 	}
 
 }
-Set-PSReadLineKeyHandler -Chord ' ' -ScriptBlock $sb
+Set-PSReadLineKeyHandler -BriefDescription 'PSExpandLine' -Chord ' ' -ScriptBlock $sb -Description 'Expand a defined expansion key string to its value.'
 
 
 # Set the key handler for expansion suppression
-Set-PSReadLineKeyHandler -Chord 'Shift+SpaceBar' -ScriptBlock { [Microsoft.PowerShell.PSConsoleReadLine]::Insert(' ') }
+Set-PSReadLineKeyHandler -BriefDescription 'PSExpandLine' -Chord 'Shift+SpaceBar' -ScriptBlock { [Microsoft.PowerShell.PSConsoleReadLine]::Insert(' ') } -Description 'Suppress expansion of a defined expansion key string.'
 
 
 # Export module members
 $AliasesToExport   = @()
 $CmdletsToExport   = @()
-$FunctionsToExport = @('Edit-CustomAlias','Save-NativeAlias')
+$FunctionsToExport = @('Save-AliasAsHotstring','Edit-CustomHotstring')
 $VariablesToExport = @()
 $moduleMembers =
 @{
@@ -120,3 +122,11 @@ $moduleMembers =
 	'Variable' = $VariablesToExport
 }
 Export-ModuleMember @moduleMembers
+
+
+# Add OnRemove logic
+$onRemove =
+{
+	Get-PSReadLineKeyHandler | Where-Object Function -eq PSExpandLine | ForEach-Object { Remove-PSReadLineKeyHandler -Chord $_.Key }
+}
+$MyInvocation.MyCommand.ScriptBlock.Module.OnRemove = $onRemove

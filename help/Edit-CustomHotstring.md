@@ -1,20 +1,20 @@
-# Edit-CustomAlias
+# Edit-CustomHotstring
 
 ## SYNOPSIS
-Edit the list of custom aliases for use by PSExpandLine.
+Edit the list of custom hotstrings for use by PSExpandLine.
 
 ## SYNTAX
 
 ```
-Edit-CustomAlias [<CommonParameters>]
+Edit-CustomHotstring [<CommonParameters>]
 ```
 
 ## DESCRIPTION
-Edit the list of custom aliases for use by PSExpandLine.
-This command will open a list of user-defined alias expansions with the default editor associated with .csv files.
+Edit the list of custom hotstrings for use by PSExpandLine.
+This command will open a list of user-defined hotstring definitions with the default editor associated with .csv files (on Linux machines, the file object will be written to the pipeline).
 If the file does not exist, the command will first create it.
 The command can be run as often as required by the user.
-The command will wait until the file has been closed, and then reload the module so that the aliases are available immediately.
+The command will wait until the file has been closed, and then reload the module so that the hotstrings are available immediately.
 In order to see the effect of a change without closing the file, simply run:
 
 `Import-Module -Name PSExpandLine -Force`
@@ -23,7 +23,7 @@ In order to see the effect of a change without closing the file, simply run:
 
 ### EXAMPLE 1
 ```
-Edit-CustomAlias
+Edit-CustomHotstring
 ```
 
 ## PARAMETERS
@@ -33,16 +33,20 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## INPUTS
 
+None.
 
 ## OUTPUTS
 
+[System.Void]
+
+The function does not return anything.
 
 ## NOTES
 Author : nmbell
 
 ## RELATED LINKS
 
-[Save-NativeAlias](Save-NativeAlias.md)
+[Save-AliasAsHotstring](Save-AliasAsHotstring.md)
 
 [about_PSExpandLine](about_PSExpandLine.md)
 

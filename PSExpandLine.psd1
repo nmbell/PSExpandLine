@@ -12,7 +12,7 @@
 RootModule = 'PSExpandLine.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.1'
+ModuleVersion = '1.1.0'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -30,16 +30,16 @@ Author = 'nmbell'
 Copyright = '(c) 2021 nmbell. All rights reserved.'
 
 # Description of the functionality provided by this module
-Description = 'Automatic expansion of native and custom aliases in the console.'
+Description = 'Automatic expansion of command aliases and custom hotstrings in the console.'
 
 # Minimum version of the PowerShell engine required by this module
 PowerShellVersion = '7.1'
 
 # Name of the PowerShell host required by this module
-# PowerShellHostName = ''
+PowerShellHostName = 'ConsoleHost'
 
 # Minimum version of the PowerShell host required by this module
-# PowerShellHostVersion = ''
+PowerShellHostVersion = '7.1'
 
 # Minimum version of Microsoft .NET Framework required by this module. This prerequisite is valid for the PowerShell Desktop edition only.
 # DotNetFrameworkVersion = ''
@@ -52,7 +52,11 @@ PowerShellVersion = '7.1'
 
 # Modules that must be imported into the global environment prior to importing this module
 RequiredModules = @(
-	'PSReadLine'
+	@{
+		ModuleName    = 'PSReadLine'
+		ModuleVersion = '2.0.0'
+		GUID          = '5714753b-2afd-4492-a5fd-01d9e2cff8b5'
+	}
 )
 
 # Assemblies that must be loaded prior to importing this module
@@ -78,8 +82,8 @@ CmdletsToExport = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
 FunctionsToExport = @(
-	'Edit-CustomAlias'
-	'Save-NativeAlias'
+	'Save-AliasAsHotstring'
+	'Edit-CustomHotstring'
 )
 
 # Variables to export from this module
@@ -106,13 +110,13 @@ PrivateData = @{
         LicenseUri = 'https://github.com/nmbell/PSExpandLine/blob/main/LICENSE'
 
         # A URL to the main website for this project.
-        # ProjectUri = ''
+        ProjectUri = 'https://github.com/nmbell/PSExpandLine#readme'
 
         # A URL to an icon representing this module.
-        # IconUri = ''
+        IconUri = 'https://github.com/nmbell/PSExpandLine/raw/main/config/PSExpandLinelogo.png'
 
         # ReleaseNotes of this module
-        # ReleaseNotes = ''
+        ReleaseNotes = 'https://github.com/nmbell/PSExpandLine#release-history'
 
         # Prerelease string of this module
         # Prerelease = ''
