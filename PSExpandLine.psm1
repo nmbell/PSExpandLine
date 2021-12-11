@@ -1,4 +1,4 @@
-# PSExpandLine 1.1.0
+# PSExpandLine 1.1.1
 [CmdletBinding()]
 Param()
 
@@ -7,7 +7,7 @@ Param()
 $PSExpandLine = @{}
 $PSExpandLine.NativeHotstringsFilePath = Join-Path -Path $PSScriptRoot -ChildPath 'config' -AdditionalChildPath 'PSExpandLine_native.csv'
 $PSExpandLine.CustomHotstringsFilePath = Join-Path -Path $PSScriptRoot -ChildPath 'config' -AdditionalChildPath 'PSExpandLine_custom.csv'
-$PSExpandLine.ModulePath               = $PSScriptRoot
+$PSExpandLine.ModulePath               = $PSCommandPath
 
 
 # Include functions

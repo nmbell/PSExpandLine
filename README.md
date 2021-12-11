@@ -1,4 +1,4 @@
-# PSExpandLine 1.1.0
+# PSExpandLine 1.1.1
 
 [SHORT DESCRIPTION](#short-description)
 
@@ -63,7 +63,7 @@ This command will open a list of user-defined hotstring definitions with the def
 
 ## QUICK START GUIDE
 ### 1. Install the module.
-The [module](https://www.powershellgallery.com/packages/PSExpandLine/1.1.0) is available through the [PowerShell Gallery](https://docs.microsoft.com/en-us/powershell/scripting/gallery/getting-started). Run the following command in a PowerShell console to install the module:
+The [module](https://www.powershellgallery.com/packages/PSExpandLine/1.1.1) is available through the [PowerShell Gallery](https://docs.microsoft.com/en-us/powershell/scripting/gallery/getting-started). Run the following command in a PowerShell console to install the module:
 ```
 Install-Module -Name PSExpandLine -Force
 ```
@@ -159,6 +159,9 @@ PSReadLine reference documentation can be found [here](https://docs.microsoft.co
 ----------------------------------------------------------------------------------------------------
 
 ## RELEASE HISTORY
+### 1.1.1 (2021-12-10)
+- Update setting of module path.
+
 ### 1.1.0 (2021-12-10)
 - Update language and code throughout to refer to strings that will trigger an expansion as 'hotstrings'.
 - Rename functions to be more descriptive; include aliases for previous names.
@@ -178,4 +181,3 @@ PSReadLine reference documentation can be found [here](https://docs.microsoft.co
 
 ### 1.0.0 (2021-10-21)
 - Initial release.
-
