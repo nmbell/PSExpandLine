@@ -27,6 +27,8 @@ function Save-AliasAsHotstring
 	.LINK
 	Edit-CustomHotstring
 	.LINK
+	Edit-CustomHotlist
+	.LINK
 	about_PSExpandLine
 	#>
 
@@ -58,23 +60,23 @@ function Save-AliasAsHotstring
 	PROCESS
 	{
 		# Export the hotstrings
-		Write-Verbose "[$thisFunctionName]Exporting hotstrings to: $($PSExpandLine.NativeHotstringsFilePath)"
+		Write-Verbose "[$thisFunctionName]Exporting hotstrings to: $($Module.NativeHotstringsFilePath)"
 
 		Get-Alias `
 		| Select-Object Name,Definition `
 		| Sort-Object Name `
 		| Tee-Object -Variable exportedAliases
-		| Export-Csv -Path $PSExpandLine.NativeHotstringsFilePath -Force # overwrite
+		| Export-Csv -Path $Module.NativeHotstringsFilePath -Force # overwrite
 
 		Write-Verbose "[$thisFunctionName]Exported hotstrings: $($exportedAliases.Count)"
 
 		# Mark the file as ReadOnly
-		$nativeAliasesFile = Get-Item -Path $PSExpandLine.NativeHotstringsFilePath
+		$nativeAliasesFile = Get-Item -Path $Module.NativeHotstringsFilePath
 		$nativeAliasesFile.IsReadOnly = $true
 
 		# Reload the module
-		Write-Verbose "[$thisFunctionName]Re-importing PSExpandLine module: $($PSExpandLine.ModulePath)"
-		Import-Module -Name $PSExpandLine.ModulePath -Global -Force -Verbose:$false
+		Write-Verbose "[$thisFunctionName]Re-importing PSExpandLine module: $($Module.ModulePath)"
+		Import-Module -Name $Module.ModulePath -Global -Force -Verbose:$false
 	}
 
 	END

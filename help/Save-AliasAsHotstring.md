@@ -45,6 +45,8 @@ Author : nmbell
 
 [Edit-CustomHotstring](Edit-CustomHotstring.md)
 
+[Edit-CustomHotlist](Edit-CustomHotlist.md)
+
 [about_PSExpandLine](about_PSExpandLine.md)
 
 

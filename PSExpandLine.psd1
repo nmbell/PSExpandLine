@@ -12,7 +12,7 @@
 RootModule = 'PSExpandLine.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.1.1'
+ModuleVersion = '2.0.0'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -82,12 +82,15 @@ CmdletsToExport = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
 FunctionsToExport = @(
-	'Save-AliasAsHotstring'
+	'Edit-CustomHotlist'
 	'Edit-CustomHotstring'
+	'Save-AliasAsHotstring'
 )
 
 # Variables to export from this module
-VariablesToExport = @()
+VariablesToExport = @(
+	'PSExpandLine'
+)
 
 # DSC resources to export from this module
 # DscResourcesToExport = @()
@@ -113,7 +116,7 @@ PrivateData = @{
         ProjectUri = 'https://github.com/nmbell/PSExpandLine#readme'
 
         # A URL to an icon representing this module.
-        IconUri = 'https://github.com/nmbell/PSExpandLine/raw/main/config/PSExpandLinelogo.png'
+        IconUri = 'https://raw.githubusercontent.com/nmbell/PSExpandLine/main/images/psexpandlinelogo.png'
 
         # ReleaseNotes of this module
         ReleaseNotes = 'https://github.com/nmbell/PSExpandLine#release-history'

@@ -1,13 +1,17 @@
-# PSExpandLine 1.1.1
+# PSExpandLine 2.0.0
 [CmdletBinding()]
 Param()
 
 
 # Set variables
-$PSExpandLine = @{}
-$PSExpandLine.NativeHotstringsFilePath = Join-Path -Path $PSScriptRoot -ChildPath 'config' -AdditionalChildPath 'PSExpandLine_native.csv'
-$PSExpandLine.CustomHotstringsFilePath = Join-Path -Path $PSScriptRoot -ChildPath 'config' -AdditionalChildPath 'PSExpandLine_custom.csv'
-$PSExpandLine.ModulePath               = $PSCommandPath
+$Module = @{}
+$Module.ModulePath               = $PSCommandPath
+$Module.DefaultHotlist           = $null
+$Module.NativeHotstringsFilePath = Join-Path -Path $PSScriptRoot -ChildPath 'config' -AdditionalChildPath 'PSExpandLine_native.csv'
+$Module.CustomHotstringsFilePath = Join-Path -Path $PSScriptRoot -ChildPath 'config' -AdditionalChildPath 'PSExpandLine_custom.csv'
+$Module.CustomHotListsFilePath   = Join-Path -Path $PSScriptRoot -ChildPath 'config' -AdditionalChildPath 'PSExpandLine_hotlist.csv'
+$Module.Name                     = 'PSExpandLine'
+$script:listPosn                 = 0
 
 
 # Include functions
@@ -20,100 +24,93 @@ ForEach ($file in Get-ChildItem -Path $functionsDirPath -Filter '*.ps1')
 
 # Import the hotstrings
 $hotstrings = [Ordered]@{}
-If (Test-Path -Path $PSExpandLine.NativeHotstringsFilePath)
+If (Test-Path -Path $Module.NativeHotstringsFilePath)
 {
-	Import-Csv -Path $PSExpandLine.NativeHotstringsFilePath | ForEach-Object { $hotstrings.$($_.Name) = $_.Definition }
+	Import-Csv -Path $Module.NativeHotstringsFilePath | ForEach-Object { $hotstrings.$($_.Name) = $_.Definition }
 }
-If (Test-Path -Path $PSExpandLine.CustomHotstringsFilePath)
+If (Test-Path -Path $Module.CustomHotstringsFilePath)
 {
 	# custom hotstrings can overwrite native hotstrings
-	Import-Csv -Path $PSExpandLine.CustomHotstringsFilePath | ForEach-Object { $hotstrings.$($_.Name) = $_.Definition }
+	Import-Csv -Path $Module.CustomHotstringsFilePath | ForEach-Object { $hotstrings.$($_.Name) = $_.Definition }
+}
+
+
+# Import the hotlists
+$script:hotlists = @{}
+If (Test-Path -Path $Module.CustomHotListsFilePath)
+{
+	Import-Csv -Path $Module.CustomHotListsFilePath `
+	| Where-Object Name -match 'Ctrl\+[1-9]' `
+	| ForEach-Object {
+
+		$chord     = $_.Name
+		$isDefault = [Bool][Int]$_.IsDefault
+		$separator = $_.Separator
+		$listItems = $_.Definition
+
+		If ($listItems[0] -eq '{' -and $listItems[-1] -eq '}') # script block
+		{
+			$sbListItems = [ScriptBlock]::Create($listItems.Substring(1,$listItems.Length-2).Trim())
+			$listItems = Invoke-Command -ScriptBlock $sbListItems -ErrorAction Ignore `
+						 | ForEach-Object { $_.ToString().Trim() } `
+						 | Select-Object -Unique
+		}
+		Else
+		{
+			$listItems = $listItems.Split($separator) | Select-Object -Unique
+		}
+		$script:hotlists[$chord] = $listItems
+
+		If ($isDefault)
+		{
+			$Module.DefaultHotlist = $chord
+		}
+	}
 }
 
 
 # Set the key handler for hotstring expansion
-$sb =
+. "$(Join-Path -Path $PSScriptRoot -ChildPath 'PSExpandLine_sbExpandHotstring.ps1')"
+Set-PSReadLineKeyHandler -Chord 'Spacebar' -ScriptBlock $sbExpand -BriefDescription $Module.Name -Description 'Hotstrings: expand a defined hotstring to its value.'
+
+
+# Set the key handler for suppression of hotstring expansion
+Set-PSReadLineKeyHandler -Chord 'Shift+SpaceBar' -ScriptBlock { [Microsoft.PowerShell.PSConsoleReadLine]::Insert(' ') } -BriefDescription $Module.Name -Description 'Hotstrings: suppress expansion of a defined hotstring.'
+
+
+# Set key handlers for hotlist selection
+. "$(Join-Path -Path $PSScriptRoot -ChildPath 'PSExpandLine_sbSelectHotlist.ps1')"
+ForEach ($chord in $script:hotlists.Keys)
 {
-	# Get the contents of the buffer
-	$ast         = $null
-	$tokens      = $null
-	$parseErrors = $null
-	$cursor1     = $null
-	$buffer      = $null
-	$cursor2     = $null
-	[Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([Ref]$ast,[Ref]$tokens,[Ref]$parseErrors,[Ref]$cursor1)
-	[Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([Ref]$buffer,[Ref]$cursor2)
-
-	# Find the token immediately before the cursor
-	$textLeftOfCursor  = $buffer.Substring(0,$cursor2).Trim()
-	$tokenLeftOfCursor = $null
-	ForEach ($token in $tokens)
-	{
-		$tokenLeftOfCursor = $token
-
-		# Remove token text from the buffer text until there's nothing left
-		If ($textLeftOfCursor.StartsWith($token.Text))
-		{
-			$textLeftOfCursor = $textLeftOfCursor.Substring($token.Text.Length).Trim()
-		}
-		If (!$textLeftOfCursor)
-		{
-			Break
-		}
-	}
-
-	# Get the hotstring definition
-	$hotstringDefinition = $null
-	If (!$tokenLeftOfCursor.TokenFlags -or $tokenLeftOfCursor.TokenFlags -band 524288) # 524288 = CommandName
-	{
-		$hotstringDefinition = $hotstrings[$($tokenLeftOfCursor.Text)]
-	}
-
-	# Replace hotstring with full command name
-	If ($hotstringDefinition)
-	{
-		[Microsoft.PowerShell.PSConsoleReadLine]::BackwardDeleteWord()
-		$space = ' '
-		If ($cursor2 -lt $buffer.Length -and $buffer.Substring($cursor2,1) -eq ' ') { $space = '' } # don't add a space if there's one already there
-		If ($hotstringDefinition[0] -eq '{' -and $hotstringDefinition[-1] -eq '}') # script block
-		{
-			$sb = [ScriptBlock]::Create($hotstringDefinition.Substring(1,$hotstringDefinition.Length-2).Trim())
-			$hotstringDefinition = Invoke-Command -ScriptBlock $sb -ErrorAction Ignore | Out-String -NoNewline
-		}
-		If ($hotstringDefinition -like '*<PSXLCursor>*')
-		{
-			$splitDefinition = $hotstringDefinition -split '<PSXLCursor>'
-			[Microsoft.PowerShell.PSConsoleReadLine]::Insert($splitDefinition[0])
-			[Microsoft.PowerShell.PSConsoleReadLine]::SetMark()
-			[Microsoft.PowerShell.PSConsoleReadLine]::Insert($splitDefinition[1])
-			[Microsoft.PowerShell.PSConsoleReadLine]::Insert($space)
-			[Microsoft.PowerShell.PSConsoleReadLine]::ExchangePointAndMark()
-
-		}
-		Else
-		{
-			[Microsoft.PowerShell.PSConsoleReadLine]::Insert($hotstringDefinition)
-			[Microsoft.PowerShell.PSConsoleReadLine]::Insert($space)
-		}
-	}
-	Else
-	{
-		[Microsoft.PowerShell.PSConsoleReadLine]::Insert(' ')
-	}
-
+	$displayList = $($script:hotlists[$chord] -join ' ')
+	$displayList = $displayList.Length -gt 75 ? $displayList.Substring(0,74)+'…' : $displayList
+	Set-PSReadLineKeyHandler -Chord $chord -ScriptBlock $sbSelect -BriefDescription $Module.Name -Description "Hotlists: select hotlist: $displayList"
 }
-Set-PSReadLineKeyHandler -BriefDescription 'PSExpandLine' -Chord ' ' -ScriptBlock $sb -Description 'Expand a defined expansion key string to its value.'
+Set-PSReadLineKeyHandler -Chord 'Ctrl+0' -ScriptBlock $sbSelect -BriefDescription $Module.Name -Description "Hotlists: deactivate all hotlists."
 
 
-# Set the key handler for expansion suppression
-Set-PSReadLineKeyHandler -BriefDescription 'PSExpandLine' -Chord 'Shift+SpaceBar' -ScriptBlock { [Microsoft.PowerShell.PSConsoleReadLine]::Insert(' ') } -Description 'Suppress expansion of a defined expansion key string.'
+# Set the default hotlist
+If ($Module.DefaultHotlist)
+{
+	& $sbSelect
+}
+
+
+# Set the key handlers for hotlist insertion
+. "$(Join-Path -Path $PSScriptRoot -ChildPath 'PSExpandLine_sbInsertListItem.ps1')"
+Set-PSReadLineKeyHandler -Chord 'Ctrl+DownArrow'       -ScriptBlock $sbInsert -BriefDescription $Module.Name -Description 'Hotlists: insert the next     item in the selected hotlist.'
+Set-PSReadLineKeyHandler -Chord 'Ctrl+UpArrow'         -ScriptBlock $sbInsert -BriefDescription $Module.Name -Description 'Hotlists: insert the previous item in the selected hotlist.'
+Set-PSReadLineKeyHandler -Chord 'Shift+DownArrow'      -ScriptBlock $sbInsert -BriefDescription $Module.Name -Description 'Hotlists: insert the next     item in the selected hotlist with single-quotes.'
+Set-PSReadLineKeyHandler -Chord 'Shift+UpArrow'        -ScriptBlock $sbInsert -BriefDescription $Module.Name -Description 'Hotlists: insert the previous item in the selected hotlist with single-quotes.'
+Set-PSReadLineKeyHandler -Chord 'Ctrl+Shift+DownArrow' -ScriptBlock $sbInsert -BriefDescription $Module.Name -Description 'Hotlists: insert the next     item in the selected hotlist with double-quotes.'
+Set-PSReadLineKeyHandler -Chord 'Ctrl+Shift+UpArrow'   -ScriptBlock $sbInsert -BriefDescription $Module.Name -Description 'Hotlists: insert the previous item in the selected hotlist with double-quotes.'
 
 
 # Export module members
 $AliasesToExport   = @()
 $CmdletsToExport   = @()
-$FunctionsToExport = @('Save-AliasAsHotstring','Edit-CustomHotstring')
-$VariablesToExport = @()
+$FunctionsToExport = @('Edit-CustomHotlist','Edit-CustomHotstring','Save-AliasAsHotstring')
+$VariablesToExport = @('PSExpandLine')
 $moduleMembers =
 @{
 	'Alias'    = $AliasesToExport
